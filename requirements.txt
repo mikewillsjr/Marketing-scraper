@@ -2,7 +2,6 @@ streamlit>=1.28.0
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 twikit>=1.0.0
-TikTok-Api>=6.0.0
 instaloader>=4.10.0
 playwright>=1.40.0
 pyyaml>=6.0.0
