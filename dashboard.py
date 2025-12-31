@@ -8,6 +8,7 @@ import os
 import re
 import sqlite3
 import time
+import traceback
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -27,6 +28,29 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# Debug logging function - outputs to browser console
+def log_to_console(message, data=None):
+    """Log message to browser console via JavaScript."""
+    if data is not None:
+        try:
+            data_str = json.dumps(data, default=str)
+            js = f'console.log("[MIKES-SCRAPER] {message}:", {data_str});'
+        except:
+            js = f'console.log("[MIKES-SCRAPER] {message}:", "{str(data)}");'
+    else:
+        js = f'console.log("[MIKES-SCRAPER] {message}");'
+    st.components.v1.html(f"<script>{js}</script>", height=0)
+
+def log_error(message, error=None):
+    """Log error to browser console."""
+    error_str = str(error) if error else "Unknown error"
+    tb = traceback.format_exc() if error else ""
+    js = f'console.error("[MIKES-SCRAPER ERROR] {message}:", "{error_str}", "{tb}");'
+    st.components.v1.html(f"<script>{js}</script>", height=0)
+
+# Log startup
+log_to_console("Dashboard loaded", {"db_path": os.path.exists('/data'), "timestamp": datetime.now().isoformat()})
 
 
 # ============================================================================
@@ -61,50 +85,57 @@ def dict_from_row(row):
 
 def get_stats():
     """Get dashboard statistics."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    try:
+        log_to_console("get_stats() called")
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-    # Total posts
-    cursor.execute('SELECT COUNT(*) as count FROM posts')
-    total_posts = cursor.fetchone()['count']
+        # Total posts
+        cursor.execute('SELECT COUNT(*) as count FROM posts')
+        total_posts = cursor.fetchone()['count']
 
-    # Posts today
-    today = datetime.now().date().isoformat()
-    cursor.execute("SELECT COUNT(*) as count FROM posts WHERE DATE(scraped_at) = ?", (today,))
-    posts_today = cursor.fetchone()['count']
+        # Posts today
+        today = datetime.now().date().isoformat()
+        cursor.execute("SELECT COUNT(*) as count FROM posts WHERE DATE(scraped_at) = ?", (today,))
+        posts_today = cursor.fetchone()['count']
 
-    # High priority opportunities (relevance >= 7, status = 'new')
-    cursor.execute("""
-        SELECT COUNT(*) as count FROM analysis
-        WHERE relevance_score >= 7 AND status = 'new'
-    """)
-    high_priority = cursor.fetchone()['count']
+        # High priority opportunities (relevance >= 7, status = 'new')
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM analysis
+            WHERE relevance_score >= 7 AND status = 'new'
+        """)
+        high_priority = cursor.fetchone()['count']
 
-    # Posts by source
-    cursor.execute("""
-        SELECT source, COUNT(*) as count FROM posts
-        GROUP BY source ORDER BY count DESC
-    """)
-    by_source = {row['source']: row['count'] for row in cursor.fetchall()}
+        # Posts by source
+        cursor.execute("""
+            SELECT source, COUNT(*) as count FROM posts
+            GROUP BY source ORDER BY count DESC
+        """)
+        by_source = {row['source']: row['count'] for row in cursor.fetchall()}
 
-    # Opportunities by business
-    cursor.execute("""
-        SELECT b.name, COUNT(*) as count
-        FROM analysis a
-        JOIN businesses b ON a.business_id = b.id
-        WHERE a.relevance_score >= 7
-        GROUP BY b.id ORDER BY count DESC
-    """)
-    by_business = {row['name']: row['count'] for row in cursor.fetchall()}
+        # Opportunities by business
+        cursor.execute("""
+            SELECT b.name, COUNT(*) as count
+            FROM analysis a
+            JOIN businesses b ON a.business_id = b.id
+            WHERE a.relevance_score >= 7
+            GROUP BY b.id ORDER BY count DESC
+        """)
+        by_business = {row['name']: row['count'] for row in cursor.fetchall()}
 
-    conn.close()
-    return {
-        'total_posts': total_posts,
-        'posts_today': posts_today,
-        'high_priority': high_priority,
-        'by_source': by_source,
-        'by_business': by_business
-    }
+        conn.close()
+        stats = {
+            'total_posts': total_posts,
+            'posts_today': posts_today,
+            'high_priority': high_priority,
+            'by_source': by_source,
+            'by_business': by_business
+        }
+        log_to_console("get_stats() result", stats)
+        return stats
+    except Exception as e:
+        log_error("get_stats() failed", e)
+        raise
 
 
 def get_opportunities(business_filter=None, status_filter=None, limit=50):
@@ -176,19 +207,25 @@ def get_all_posts(search_query=None, limit=50, offset=0):
 
 def get_businesses():
     """Get all businesses with keyword counts."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    try:
+        log_to_console("get_businesses() called")
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT b.*, COUNT(k.id) as keyword_count
-        FROM businesses b
-        LEFT JOIN keywords k ON b.id = k.business_id AND k.is_active = 1
-        GROUP BY b.id
-        ORDER BY b.created_at DESC
-    """)
-    businesses = [dict_from_row(row) for row in cursor.fetchall()]
-    conn.close()
-    return businesses
+        cursor.execute("""
+            SELECT b.*, COUNT(k.id) as keyword_count
+            FROM businesses b
+            LEFT JOIN keywords k ON b.id = k.business_id AND k.is_active = 1
+            GROUP BY b.id
+            ORDER BY b.created_at DESC
+        """)
+        businesses = [dict_from_row(row) for row in cursor.fetchall()]
+        conn.close()
+        log_to_console("get_businesses() result", {"count": len(businesses), "businesses": businesses})
+        return businesses
+    except Exception as e:
+        log_error("get_businesses() failed", e)
+        raise
 
 
 def get_business_keywords(business_id):
@@ -371,14 +408,18 @@ def render_category_pill(category):
 
 def render_overview_tab():
     """Render the Overview tab."""
+    log_to_console("render_overview_tab() called")
     stats = get_stats()
 
     # Check if there are any businesses
     businesses = get_businesses()
+    log_to_console("render_overview_tab() businesses check", {"has_businesses": len(businesses) > 0, "count": len(businesses)})
     if not businesses:
         st.info("👋 **Welcome to Mike's Scraper!**\n\nAdd your first business in the **Businesses** tab to get started.")
+        log_to_console("render_overview_tab() showing welcome message - no businesses")
         return
 
+    log_to_console("render_overview_tab() showing metrics")
     # Metrics row
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -829,6 +870,7 @@ def render_health_tab():
 # ============================================================================
 
 def main():
+    log_to_console("main() called - rendering dashboard")
     st.title("🔍 Mike's Scraper")
 
     # Create tabs
@@ -841,19 +883,26 @@ def main():
     ])
 
     with tab1:
+        log_to_console("Tab 1 (Overview) rendering")
         render_overview_tab()
 
     with tab2:
+        log_to_console("Tab 2 (Opportunities) rendering")
         render_opportunities_tab()
 
     with tab3:
+        log_to_console("Tab 3 (All Posts) rendering")
         render_all_posts_tab()
 
     with tab4:
+        log_to_console("Tab 4 (Businesses) rendering")
         render_businesses_tab()
 
     with tab5:
+        log_to_console("Tab 5 (Health) rendering")
         render_health_tab()
+
+    log_to_console("main() complete")
 
 
 if __name__ == "__main__":
