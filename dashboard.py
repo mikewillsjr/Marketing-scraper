@@ -450,6 +450,65 @@ def render_overview_tab():
         else:
             st.info("No opportunities found yet")
 
+    # Manual scraper controls
+    st.divider()
+    st.subheader("Run Scrapers")
+    st.caption("Manually trigger scrapers to fetch posts now")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        if st.button("🔴 Reddit", key="run_reddit"):
+            with st.spinner("Scraping Reddit..."):
+                try:
+                    from scrapers.reddit_scraper import scrape_reddit
+                    from scrapers.base_scraper import update_heartbeat
+                    posts = scrape_reddit()
+                    update_heartbeat('reddit', success=True, posts_found=posts)
+                    st.success(f"Found {posts} new posts!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    with col2:
+        if st.button("🟠 Hacker News", key="run_hn"):
+            with st.spinner("Scraping Hacker News..."):
+                try:
+                    from scrapers.hackernews_scraper import scrape_hackernews
+                    from scrapers.base_scraper import update_heartbeat
+                    posts = scrape_hackernews()
+                    update_heartbeat('hackernews', success=True, posts_found=posts)
+                    st.success(f"Found {posts} new posts!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    with col3:
+        if st.button("🟣 TikTok", key="run_tiktok"):
+            with st.spinner("Scraping TikTok..."):
+                try:
+                    from scrapers.tiktok_scraper import scrape_tiktok
+                    from scrapers.base_scraper import update_heartbeat
+                    posts = scrape_tiktok()
+                    update_heartbeat('tiktok', success=True, posts_found=posts)
+                    st.success(f"Found {posts} new posts!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    with col4:
+        if st.button("🤖 Classify Posts", key="run_classify"):
+            with st.spinner("Classifying posts..."):
+                try:
+                    from processing.classifier import classify_posts
+                    from scrapers.base_scraper import update_heartbeat
+                    count = classify_posts(batch_size=10)
+                    update_heartbeat('classifier', success=True, posts_found=count)
+                    st.success(f"Classified {count} posts!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
 
 # ============================================================================
 # Tab 2: Opportunities
