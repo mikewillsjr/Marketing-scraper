@@ -81,11 +81,30 @@ def parse_search_results(html):
     return posts
 
 
+def post_matches_keyword(post_data, keyword):
+    """Check if a post actually contains the keyword (Reddit search can be fuzzy)."""
+    keyword_lower = keyword.lower()
+    title = (post_data.get('title') or '').lower()
+    body = (post_data.get('selftext') or '').lower()
+    searchable = f"{title} {body}"
+
+    # Exact match
+    if keyword_lower in searchable:
+        return True
+
+    # All words from keyword appear somewhere
+    words = keyword_lower.split()
+    if len(words) > 1 and all(word in searchable for word in words):
+        return True
+
+    return False
+
+
 @retry_with_backoff(max_retries=2, base_delay=5)
 def search_reddit_json(keyword, session):
     """Search Reddit using JSON API (more reliable than HTML scraping)."""
     encoded_keyword = quote_plus(keyword)
-    url = f"https://www.reddit.com/search.json?q={encoded_keyword}&sort=new&t=week&limit=25"
+    url = f"https://www.reddit.com/search.json?q={encoded_keyword}&sort=new&t=week&limit=50"
 
     response = session.get(
         url,
@@ -99,7 +118,7 @@ def search_reddit_json(keyword, session):
 
     for child in data.get('data', {}).get('children', []):
         post = child.get('data', {})
-        if post:
+        if post and post_matches_keyword(post, keyword):
             posts.append({
                 'source_id': f"reddit_{post.get('id', '')}",
                 'title': post.get('title', ''),
