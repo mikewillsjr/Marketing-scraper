@@ -594,18 +594,32 @@ def render_all_posts_tab():
 
     st.write(f"Showing {offset + 1}-{min(offset + per_page, total)} of {total} posts")
 
-    # Display as table
-    df_data = []
+    # Display each post as an expandable card with link
     for post in posts:
-        df_data.append({
-            'Date': post['scraped_at'][:10] if post['scraped_at'] else 'N/A',
-            'Source': post['source'],
-            'Title': (post.get('title') or post.get('body', ''))[:80],
-            'Author': post.get('author') or 'N/A'
-        })
+        title = post.get('title') or post.get('body', '')[:80] or 'No title'
+        source = post['source'].upper()
+        date = post['scraped_at'][:10] if post['scraped_at'] else 'N/A'
+        url = post.get('url', '')
 
-    df = pd.DataFrame(df_data)
-    st.dataframe(df, use_container_width=True)
+        # Header with source badge and link
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            if url:
+                st.markdown(f"**[{title[:100]}]({url})**")
+            else:
+                st.markdown(f"**{title[:100]}**")
+        with col2:
+            st.caption(f"{source} • {date}")
+
+        # Show body preview in expander
+        body = post.get('body', '')
+        if body:
+            with st.expander("Show full post"):
+                st.write(body[:2000])
+                if url:
+                    st.markdown(f"[Open original post →]({url})")
+
+        st.divider()
 
 
 # ============================================================================
