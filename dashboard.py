@@ -170,35 +170,43 @@ def get_opportunities(business_filter=None, status_filter=None, limit=50):
     return opportunities
 
 
-def get_all_posts(search_query=None, limit=50, offset=0):
-    """Get all posts with optional search."""
+def get_all_posts(search_query=None, source=None, date_filter="All Time", limit=50, offset=0):
+    """Get all posts with optional filters."""
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # Build WHERE clause dynamically
+    conditions = []
+    params = []
+
     if search_query:
-        cursor.execute("""
-            SELECT * FROM posts
-            WHERE title LIKE ? OR body LIKE ?
-            ORDER BY scraped_at DESC
-            LIMIT ? OFFSET ?
-        """, (f'%{search_query}%', f'%{search_query}%', limit, offset))
-    else:
-        cursor.execute("""
-            SELECT * FROM posts
-            ORDER BY scraped_at DESC
-            LIMIT ? OFFSET ?
-        """, (limit, offset))
+        conditions.append("(title LIKE ? OR body LIKE ?)")
+        params.extend([f'%{search_query}%', f'%{search_query}%'])
+
+    if source:
+        conditions.append("source = ?")
+        params.append(source)
+
+    if date_filter == "Today":
+        conditions.append("date(scraped_at) = date('now')")
+    elif date_filter == "Last 7 Days":
+        conditions.append("scraped_at >= datetime('now', '-7 days')")
+    elif date_filter == "Last 30 Days":
+        conditions.append("scraped_at >= datetime('now', '-30 days')")
+
+    where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+    cursor.execute(f"""
+        SELECT * FROM posts
+        WHERE {where_clause}
+        ORDER BY scraped_at DESC
+        LIMIT ? OFFSET ?
+    """, params + [limit, offset])
 
     posts = [dict_from_row(row) for row in cursor.fetchall()]
 
     # Get total count
-    if search_query:
-        cursor.execute("""
-            SELECT COUNT(*) as count FROM posts
-            WHERE title LIKE ? OR body LIKE ?
-        """, (f'%{search_query}%', f'%{search_query}%'))
-    else:
-        cursor.execute("SELECT COUNT(*) as count FROM posts")
+    cursor.execute(f"SELECT COUNT(*) as count FROM posts WHERE {where_clause}", params)
     total = cursor.fetchone()['count']
 
     conn.close()
@@ -588,23 +596,55 @@ def render_all_posts_tab():
     """Render the All Posts tab."""
     st.subheader("All Scraped Posts")
 
-    # Clear all posts button
-    col1, col2 = st.columns([3, 1])
+    # Filters row
+    col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+
+    with col1:
+        search = st.text_input("Search posts", placeholder="Search by title or body...", label_visibility="collapsed")
+
     with col2:
-        if st.button("🗑️ Clear All Posts", type="secondary"):
+        source_filter = st.selectbox(
+            "Source",
+            ["All Sources", "Reddit", "Hacker News", "TikTok", "Twitter", "Instagram"],
+            label_visibility="collapsed"
+        )
+
+    with col3:
+        date_filter = st.selectbox(
+            "Date",
+            ["All Time", "Today", "Last 7 Days", "Last 30 Days"],
+            label_visibility="collapsed"
+        )
+
+    with col4:
+        if st.button("🗑️ Clear All", type="secondary"):
             clear_all_posts()
             st.success("All posts cleared!")
             st.rerun()
 
-    # Search
-    search = st.text_input("Search posts", placeholder="Search by title or body...")
+    # Build filter query
+    source_map = {
+        "All Sources": None,
+        "Reddit": "reddit",
+        "Hacker News": "hackernews",
+        "TikTok": "tiktok",
+        "Twitter": "twitter",
+        "Instagram": "instagram"
+    }
+    selected_source = source_map.get(source_filter)
 
     # Pagination
     page = st.number_input("Page", min_value=1, value=1, key="posts_page")
     per_page = 50
     offset = (page - 1) * per_page
 
-    posts, total = get_all_posts(search_query=search if search else None, limit=per_page, offset=offset)
+    posts, total = get_all_posts(
+        search_query=search if search else None,
+        source=selected_source,
+        date_filter=date_filter,
+        limit=per_page,
+        offset=offset
+    )
 
     if not posts:
         st.info("No posts yet - scrapers will run automatically")
