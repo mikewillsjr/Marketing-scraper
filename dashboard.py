@@ -574,9 +574,27 @@ def render_opportunities_tab():
 # Tab 3: All Posts
 # ============================================================================
 
+def clear_all_posts():
+    """Delete all posts from the database."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM posts")
+    cursor.execute("DELETE FROM analysis")
+    conn.commit()
+    conn.close()
+
+
 def render_all_posts_tab():
     """Render the All Posts tab."""
     st.subheader("All Scraped Posts")
+
+    # Clear all posts button
+    col1, col2 = st.columns([3, 1])
+    with col2:
+        if st.button("🗑️ Clear All Posts", type="secondary"):
+            clear_all_posts()
+            st.success("All posts cleared!")
+            st.rerun()
 
     # Search
     search = st.text_input("Search posts", placeholder="Search by title or body...")
