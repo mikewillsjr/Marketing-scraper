@@ -16,9 +16,9 @@ MODELS = {
         'display': 'GPT-4o',
         'color': 'blue'
     },
-    'anthropic/claude-opus-4-5': {
-        'name': 'claude-opus-4.5',
-        'display': 'Claude Opus',
+    'anthropic/claude-sonnet-4': {
+        'name': 'claude-sonnet-4',
+        'display': 'Claude Sonnet',
         'color': 'orange'
     },
     'deepseek/deepseek-chat': {
@@ -213,14 +213,14 @@ def suggest_keywords_sync(name: str, domain: str, description: str, spec_text: s
 # Model color mapping for UI
 MODEL_COLORS = {
     'gpt-4o': '#3B82F6',        # blue
-    'claude-opus-4.5': '#F97316', # orange
+    'claude-sonnet-4': '#F97316', # orange
     'deepseek': '#22C55E',       # green
     'gemini-2.5': '#EF4444'      # red
 }
 
 MODEL_EMOJIS = {
     'gpt-4o': '🔵',
-    'claude-opus-4.5': '🟠',
+    'claude-sonnet-4': '🟠',
     'deepseek': '🟢',
     'gemini-2.5': '🔴'
 }
