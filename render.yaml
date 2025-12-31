@@ -14,31 +14,32 @@ services:
       mountPath: /data
       sizeGB: 1
 
-crons:
-  - name: scrape-reddit
-    schedule: "0 */2 * * *"
-    command: python jobs/scrape_reddit.py
-
-  - name: scrape-twitter
-    schedule: "0 */4 * * *"
-    command: python jobs/scrape_twitter.py
-
-  - name: scrape-hackernews
-    schedule: "0 */3 * * *"
-    command: python jobs/scrape_hackernews.py
-
-  - name: scrape-tiktok
-    schedule: "0 */6 * * *"
-    command: python jobs/scrape_tiktok.py
-
-  - name: scrape-instagram
-    schedule: "0 */6 * * *"
-    command: python jobs/scrape_instagram.py
-
-  - name: classify-posts
-    schedule: "30 * * * *"
-    command: python jobs/classify_posts.py
-
-  - name: health-check
-    schedule: "0 */6 * * *"
-    command: python jobs/health_check.py
+# CRON JOBS DISABLED - uncomment to re-enable auto scraping
+# crons:
+#   - name: scrape-reddit
+#     schedule: "0 */2 * * *"
+#     command: python jobs/scrape_reddit.py
+#
+#   - name: scrape-twitter
+#     schedule: "0 */4 * * *"
+#     command: python jobs/scrape_twitter.py
+#
+#   - name: scrape-hackernews
+#     schedule: "0 */3 * * *"
+#     command: python jobs/scrape_hackernews.py
+#
+#   - name: scrape-tiktok
+#     schedule: "0 */6 * * *"
+#     command: python jobs/scrape_tiktok.py
+#
+#   - name: scrape-instagram
+#     schedule: "0 */6 * * *"
+#     command: python jobs/scrape_instagram.py
+#
+#   - name: classify-posts
+#     schedule: "30 * * * *"
+#     command: python jobs/classify_posts.py
+#
+#   - name: health-check
+#     schedule: "0 */6 * * *"
+#     command: python jobs/health_check.py
