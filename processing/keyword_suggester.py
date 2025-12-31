@@ -25,6 +25,11 @@ MODELS = {
         'name': 'gemini-3-pro',
         'display': 'Gemini 3 Pro',
         'color': 'red'
+    },
+    'deepseek/deepseek-v3.2-speciale': {
+        'name': 'deepseek-v3.2',
+        'display': 'DeepSeek V3.2',
+        'color': 'green'
     }
 }
 
@@ -209,11 +214,13 @@ def suggest_keywords_sync(name: str, domain: str, description: str, spec_text: s
 MODEL_COLORS = {
     'gpt-5.2': '#3B82F6',        # blue
     'claude-opus-4.5': '#F97316', # orange
-    'gemini-3-pro': '#EF4444'     # red
+    'gemini-3-pro': '#EF4444',    # red
+    'deepseek-v3.2': '#22C55E'    # green
 }
 
 MODEL_EMOJIS = {
     'gpt-5.2': '🔵',
     'claude-opus-4.5': '🟠',
-    'gemini-3-pro': '🔴'
+    'gemini-3-pro': '🔴',
+    'deepseek-v3.2': '🟢'
 }

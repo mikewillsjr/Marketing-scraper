@@ -516,7 +516,7 @@ def render_businesses_tab():
     """Render the Businesses tab."""
 
     # Model color legend
-    st.markdown("**Model Colors:** 🔵 GPT-5.2  🟠 Claude Opus 4.5  🔴 Gemini 3 Pro")
+    st.markdown("**Model Colors:** 🔵 GPT-5.2  🟠 Claude Opus 4.5  🔴 Gemini 3 Pro  🟢 DeepSeek V3.2")
     st.divider()
 
     # -------------------------------------------------------------------------
