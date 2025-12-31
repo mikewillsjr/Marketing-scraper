@@ -11,9 +11,9 @@ from typing import Optional
 
 # Model configuration with display names and colors
 MODELS = {
-    'openai/gpt-4o': {
-        'name': 'gpt-4o',
-        'display': 'GPT-4o',
+    'openai/gpt-5.2': {
+        'name': 'gpt-5.2',
+        'display': 'GPT-5.2',
         'color': 'blue'
     },
     'anthropic/claude-opus-4.5': {
@@ -21,14 +21,9 @@ MODELS = {
         'display': 'Claude Opus 4.5',
         'color': 'orange'
     },
-    'deepseek/deepseek-chat': {
-        'name': 'deepseek',
-        'display': 'DeepSeek',
-        'color': 'green'
-    },
-    'google/gemini-2.5-pro-preview-06-05': {
-        'name': 'gemini-2.5',
-        'display': 'Gemini 2.5',
+    'google/gemini-3-pro-preview': {
+        'name': 'gemini-3-pro',
+        'display': 'Gemini 3 Pro',
         'color': 'red'
     }
 }
@@ -212,15 +207,13 @@ def suggest_keywords_sync(name: str, domain: str, description: str, spec_text: s
 
 # Model color mapping for UI
 MODEL_COLORS = {
-    'gpt-4o': '#3B82F6',        # blue
+    'gpt-5.2': '#3B82F6',        # blue
     'claude-opus-4.5': '#F97316', # orange
-    'deepseek': '#22C55E',       # green
-    'gemini-2.5': '#EF4444'      # red
+    'gemini-3-pro': '#EF4444'     # red
 }
 
 MODEL_EMOJIS = {
-    'gpt-4o': '🔵',
+    'gpt-5.2': '🔵',
     'claude-opus-4.5': '🟠',
-    'deepseek': '🟢',
-    'gemini-2.5': '🔴'
+    'gemini-3-pro': '🔴'
 }
