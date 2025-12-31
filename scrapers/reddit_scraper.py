@@ -19,7 +19,7 @@ from scrapers.base_scraper import (
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 REQUEST_TIMEOUT = 30
-RATE_LIMIT_DELAY = 2  # seconds between requests
+RATE_LIMIT_DELAY = 5  # seconds between requests (Reddit rate limits aggressively)
 
 
 def parse_reddit_timestamp(time_str):
@@ -81,9 +81,41 @@ def parse_search_results(html):
     return posts
 
 
-@retry_with_backoff(max_retries=3, base_delay=5)
-def search_reddit(keyword, session):
-    """Search Reddit for a keyword."""
+@retry_with_backoff(max_retries=2, base_delay=5)
+def search_reddit_json(keyword, session):
+    """Search Reddit using JSON API (more reliable than HTML scraping)."""
+    encoded_keyword = quote_plus(keyword)
+    url = f"https://www.reddit.com/search.json?q={encoded_keyword}&sort=new&t=week&limit=25"
+
+    response = session.get(
+        url,
+        headers={'User-Agent': USER_AGENT},
+        timeout=REQUEST_TIMEOUT
+    )
+    response.raise_for_status()
+
+    posts = []
+    data = response.json()
+
+    for child in data.get('data', {}).get('children', []):
+        post = child.get('data', {})
+        if post:
+            posts.append({
+                'source_id': f"reddit_{post.get('id', '')}",
+                'title': post.get('title', ''),
+                'body': (post.get('selftext') or '')[:5000],
+                'author': post.get('author', ''),
+                'subreddit': post.get('subreddit', ''),
+                'url': f"https://reddit.com{post.get('permalink', '')}",
+                'created_at': datetime.fromtimestamp(post.get('created_utc', 0)).isoformat() if post.get('created_utc') else datetime.now().isoformat()
+            })
+
+    return posts
+
+
+@retry_with_backoff(max_retries=2, base_delay=5)
+def search_reddit_html(keyword, session):
+    """Search Reddit via HTML scraping (fallback)."""
     encoded_keyword = quote_plus(keyword)
     url = f"https://old.reddit.com/search?q={encoded_keyword}&sort=new&t=week"
 
@@ -94,6 +126,15 @@ def search_reddit(keyword, session):
     )
     response.raise_for_status()
     return parse_search_results(response.text)
+
+
+def search_reddit(keyword, session):
+    """Search Reddit - try JSON API first, fall back to HTML."""
+    try:
+        return search_reddit_json(keyword, session)
+    except Exception as e:
+        print(f"    JSON API failed ({e}), trying HTML...")
+        return search_reddit_html(keyword, session)
 
 
 def scrape_reddit():

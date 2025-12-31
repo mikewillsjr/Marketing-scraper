@@ -49,10 +49,19 @@ def matches_keywords(item, keywords):
     text = (item.get('text') or '').lower()
     searchable = f"{title} {text}"
 
-    # Check each keyword
+    # Check each keyword - split multi-word keywords and check if ALL words appear
     for keyword in keywords:
-        if keyword.lower() in searchable:
+        keyword_lower = keyword.lower()
+
+        # First try exact match
+        if keyword_lower in searchable:
             return True
+
+        # Then try: all words from the keyword must appear somewhere
+        words = keyword_lower.split()
+        if len(words) > 1:
+            if all(word in searchable for word in words):
+                return True
 
     return False
 
