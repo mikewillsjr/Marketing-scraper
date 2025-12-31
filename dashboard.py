@@ -16,6 +16,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Initialize database on import
+from init_db import init_database
+init_database()
+
 # Page config
 st.set_page_config(
     page_title="Mike's Scraper",
