@@ -593,7 +593,16 @@ def render_businesses_tab():
         # Display by category
         for cat_key, (cat_label, cat_keywords) in categories.items():
             if cat_keywords:
-                st.write(f"**{cat_label}** ({len(cat_keywords)} keywords)")
+                # Category header with Select All button
+                col_header, col_btn = st.columns([3, 1])
+                with col_header:
+                    st.write(f"**{cat_label}** ({len(cat_keywords)} keywords)")
+                with col_btn:
+                    if st.button(f"Select All", key=f"select_all_{cat_key}"):
+                        for kw in cat_keywords:
+                            st.session_state['selected_keywords'][kw['keyword']] = True
+                        st.rerun()
+
                 for kw in cat_keywords:
                     col1, col2 = st.columns([3, 1])
                     with col1:
