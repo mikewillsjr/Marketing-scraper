@@ -18,10 +18,15 @@ def get_db_path():
     return os.path.join(local_data_dir, 'scraper.db')
 
 
+_db_initialized = False
+
 def init_database():
     """Create all database tables."""
+    global _db_initialized
+    if _db_initialized:
+        return
+
     db_path = get_db_path()
-    print(f"Initializing database at: {db_path}")
 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -111,8 +116,8 @@ def init_database():
     conn.commit()
     conn.close()
 
+    _db_initialized = True
     print("Database initialized successfully!")
-    print("Tables created: businesses, keywords, posts, analysis, heartbeats")
 
 
 if __name__ == '__main__':
